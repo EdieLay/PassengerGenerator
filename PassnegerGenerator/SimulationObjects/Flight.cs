@@ -8,25 +8,25 @@ namespace PassnegerGenerator
 {
     internal class Flight
     {
-        readonly int _id;
+        readonly Guid _guid;
         readonly DateTime _date;
         readonly int _totalSeats;
 
-        public int Id {  get => _id; }
+        public Guid GUID {  get => _guid; }
         public DateTime Date { get => _date; }
         public int TotalSeats { get => _totalSeats; }
 
 
-        public Flight(int id, DateTime date, int totalSeats)
+        public Flight(string guid, DateTime date, int totalSeats)
         {
-            _id = id;
+            _guid = Guid.Parse(guid);
             _date = date;
             _totalSeats = totalSeats;
         }
 
         public override string ToString()
         {
-            return $"Flight info:\nID: {Id}\nDate: {Date}";
+            return $"Flight info:\nID: {GUID}\nDate: {Date}";
         }
     }
 }

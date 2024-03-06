@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -20,10 +21,9 @@ namespace PassnegerGenerator
     }
     internal class Passenger
     {
-        static int FREE_ID = 1; // заменить на GUID
         static Random rand = new Random(Environment.TickCount);
 
-        readonly int _id;
+        readonly Guid _guid;
         readonly string _name;
         readonly bool _hasBaggage;
         readonly Flight _flight;
@@ -33,12 +33,28 @@ namespace PassnegerGenerator
         PassengerState _nextState;
         int _afkTimer;
 
-        public int Id { get => _id; }
+        public Guid GUID { get => _guid; }
         public string Name { get => _name; }
         public bool HasBaggage { get => _hasBaggage; }
         public Flight Flight { get => _flight; }
-        public PassengerState State { get => _state; }
-        public PassengerState NextState { get => _nextState; }
+        public PassengerState State
+        {
+            get => _state;
+            set 
+            { 
+                _state = value;
+                Log.Information("State of passenger {Name} set to {State}", Name, value.ToString());
+            }
+        }
+        public PassengerState NextState 
+        { 
+            get => _nextState;
+            set 
+            { 
+                _nextState = value;
+                Log.Debug("NextState of passenger {Name} set to {NextState}", Name, value.ToString());
+            } 
+        }
         public int AFKTimer 
         { 
             get
@@ -58,7 +74,7 @@ namespace PassnegerGenerator
 
         public Passenger(Flight flight)
         {
-            _id = FREE_ID++;
+            _guid = Guid.NewGuid();
             _name = NameGenerator.GetRandomName();
             _hasBaggage = rand.NextDouble() < 0.8;
             _flight = flight;
@@ -81,7 +97,7 @@ namespace PassnegerGenerator
         public override string ToString()
         {
             string buggage = HasBaggage ? "With buggage" : "Without buggage";
-            return $"Passenger info:\nID: {Id}\nName: {Name}\n{buggage}\n{Flight}";
+            return $"Passenger info:\nID: {GUID}\nName: {Name}\n{buggage}\n{Flight}";
         }
     }
 }
