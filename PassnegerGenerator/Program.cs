@@ -1,30 +1,27 @@
-﻿using PassnegerGenerator;
+﻿using PassengerGenerator;
+using PassnegerGenerator;
 using Serilog;
 
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .WriteTo.Console()
-    .WriteTo.File("logs/log.txt", 
-                outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}", 
-                rollingInterval: RollingInterval.Day)
-    .CreateLogger();
+Console.WriteLine(TimeSpan.FromSeconds(3).TotalMilliseconds);
 
-Log.Information("Hello, world!");
+//Log.Logger = new LoggerConfiguration()
+//    .MinimumLevel.Debug()
+//    .WriteTo.Console()
+//    .WriteTo.File("logs/log.txt", 
+//                outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}", 
+//                rollingInterval: RollingInterval.Day)
+//    .CreateLogger();
 
-int a = 10, b = 0;
-try
-{
-    Log.Debug("Dividing {A} by {B}", a, b);
-    Console.WriteLine(a / b);
-}
-catch (Exception ex)
-{
-    Log.Error(ex, "Something went wrong");
-}
-finally
-{
-    await Log.CloseAndFlushAsync();
-}
+
+
+//Rabbit rabbit = Rabbit.GetInstance();
+//rabbit.PutMessage("", "");
+//rabbit.GetMessage("");
+//rabbit.CloseConnection();
+
+
+
+//await Log.CloseAndFlushAsync();
 
 //DateTime time = DateTime.Now;
 //Console.WriteLine(time);

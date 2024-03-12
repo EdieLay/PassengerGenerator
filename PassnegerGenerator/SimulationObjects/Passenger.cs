@@ -50,10 +50,10 @@ namespace PassnegerGenerator
         { 
             get => _nextState;
             set 
-            { 
+            {
                 _nextState = value;
                 Log.Debug("NextState of passenger {Name} set to {NextState}", Name, value.ToString());
-            } 
+            }
         }
         public int AFKTimer 
         { 
@@ -83,14 +83,18 @@ namespace PassnegerGenerator
             _afkTimer = 0;
         }
 
-        public void GoAFK(DateTime curTime)
+        public void RollToGoAFK(DateTime curTime)
         {
-            TimeSpan timeToFlight = Flight.Date.Subtract(curTime);
-            int minutesToFlight = (int)timeToFlight.TotalMinutes;
-            if (minutesToFlight < 1) 
-                AFKTimer = 1;
-            else
-                AFKTimer = Math.Max(1, (int)(rand.Next(minutesToFlight) * rand.NextDouble()));
+            if (rand.NextDouble() < 0.1)
+            {
+                TimeSpan timeToFlight = Flight.Date.Subtract(curTime);
+                int minutesToFlight = (int)timeToFlight.TotalMinutes;
+                if (minutesToFlight < 1)
+                    AFKTimer = 1;
+                else
+                    AFKTimer = Math.Max(1, (int)(rand.Next(minutesToFlight) * rand.NextDouble()));
+                _nextState = _state;
+            }
         }
 
 
