@@ -2,22 +2,21 @@
 using PassnegerGenerator;
 using Serilog;
 
-Console.WriteLine(TimeSpan.FromSeconds(3).TotalMilliseconds);
 
-//Log.Logger = new LoggerConfiguration()
-//    .MinimumLevel.Debug()
-//    .WriteTo.Console()
-//    .WriteTo.File("logs/log.txt", 
-//                outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}", 
-//                rollingInterval: RollingInterval.Day)
-//    .CreateLogger();
-
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    .WriteTo.File("logs/log.txt",
+                outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
 
-//Rabbit rabbit = Rabbit.GetInstance();
-//rabbit.PutMessage("", "");
-//rabbit.GetMessage("");
-//rabbit.CloseConnection();
+
+Simulation simulation = new Simulation();
+Flight flight = new("123", DateTime.Now.AddHours(2), 200, DateTime.Now);
+simulation.Flights[flight.GUID] = flight;
+simulation.Execute();
 
 
 

@@ -16,16 +16,16 @@ namespace PassengerGenerator
 
         private ConnectionFactory _factory;
         private IConnection _connection;
-        private string _exchangeName = "DemoExchange";
-        private string _routingKey = "demo-routing-key";
+        private string _exchangeName = "PassengersExchange";
 
         // WQ - Write Queue - очередь для записи
         // RQ - Read Queue - очередь для считывания
-        public string TicketsWQ { get => ""; }
-        public string TicketsRQ { get => ""; }
-        public string RegistrationWQ { get => ""; }
-        public string RegistrationRQ { get => ""; }
-        public string BusWQ { get => ""; }
+        public string TicketsWQ { get => "TicketsRequest"; }
+        public string TicketsRQ { get => "TicketsResponse"; }
+        public string RegistrationWQ { get => "RegistrationRequest"; }
+        public string RegistrationRQ { get => "RegistrationResponse"; }
+        public string BusWQ { get => "PassengersToBus"; }
+        public string FlightsRQ { get => "FlightsToPassengers"; }
 
         private Rabbit()
         {
@@ -61,23 +61,24 @@ namespace PassengerGenerator
             return _instance;
         }
 
-        private IModel GetQueue(string queueName)
+        private IModel GetQueue(string queueName, string routingKey)
         {
             IModel channel = _connection.CreateModel();
 
             channel.ExchangeDeclare(_exchangeName, ExchangeType.Direct);
             channel.QueueDeclare(queueName, false, false, false, null);
-            channel.QueueBind(queueName, _exchangeName, _routingKey, null);
+            channel.QueueBind(queueName, _exchangeName, routingKey, null);
 
             return channel;
         }
 
         public void PutMessage(string queueName, string message)
         {
-            IModel channel = GetQueue(queueName);
+            string routingKey = queueName + "Key";
+            IModel channel = GetQueue(queueName, routingKey);
 
-            byte[] messageBodyBytes = Encoding.UTF8.GetBytes("Test message");
-            channel.BasicPublish(_exchangeName, _routingKey, null, messageBodyBytes);
+            byte[] messageBodyBytes = Encoding.UTF8.GetBytes(message);
+            channel.BasicPublish(_exchangeName, routingKey, null, messageBodyBytes);
 
             Log.Information("Sent to queue {Queue} message {Message}.", queueName, message);
 
@@ -86,7 +87,8 @@ namespace PassengerGenerator
 
         public string GetMessage(string queueName)
         {
-            IModel channel = GetQueue(queueName);
+            string routingKey = queueName + "Key";
+            IModel channel = GetQueue(queueName, routingKey);
             channel.BasicQos(0, 1, false);
 
             string receivedMes = String.Empty;

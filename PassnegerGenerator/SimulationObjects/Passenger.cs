@@ -23,7 +23,7 @@ namespace PassnegerGenerator
     {
         static Random rand = new Random(Environment.TickCount);
 
-        readonly Guid _guid;
+        readonly string _guid;
         readonly string _name;
         readonly bool _hasBaggage;
         readonly Flight _flight;
@@ -33,7 +33,7 @@ namespace PassnegerGenerator
         PassengerState _nextState;
         int _afkTimer;
 
-        public Guid GUID { get => _guid; }
+        public string GUID { get => _guid; }
         public string Name { get => _name; }
         public bool HasBaggage { get => _hasBaggage; }
         public Flight Flight { get => _flight; }
@@ -52,7 +52,7 @@ namespace PassnegerGenerator
             set 
             {
                 _nextState = value;
-                Log.Debug("NextState of passenger {Name} set to {NextState}", Name, value.ToString());
+                //Log.Debug("NextState of passenger {Name} set to {NextState}", Name, value.ToString());
             }
         }
         public int AFKTimer 
@@ -66,17 +66,17 @@ namespace PassnegerGenerator
                 _afkTimer = value;
                 if (_afkTimer <= 0)
                 {
-                    _state = _nextState;
-                    _nextState = _nextState + 1;
+                    State = NextState;
+                    NextState = NextState + 1;
                 }
             }
         }
 
         public Passenger(Flight flight)
         {
-            _guid = Guid.NewGuid();
+            _guid = Guid.NewGuid().ToString();
             _name = NameGenerator.GetRandomName();
-            _hasBaggage = rand.NextDouble() < 0.8;
+            _hasBaggage = rand.NextDouble() < 0.85;
             _flight = flight;
             _state = PassengerState.CameToAirport;
             _nextState = PassengerState.RequestedTicket;
@@ -85,18 +85,35 @@ namespace PassnegerGenerator
 
         public void RollToGoAFK(DateTime curTime)
         {
-            if (rand.NextDouble() < 0.1)
+            if (rand.NextDouble() < 0.1) // шанс встать афк
             {
                 TimeSpan timeToFlight = Flight.Date.Subtract(curTime);
                 int minutesToFlight = (int)timeToFlight.TotalMinutes;
                 if (minutesToFlight < 1)
                     AFKTimer = 1;
                 else
-                    AFKTimer = Math.Max(1, (int)(rand.Next(minutesToFlight) * rand.NextDouble()));
-                _nextState = _state;
+                    AFKTimer = Math.Max(1, (int)(rand.Next(minutesToFlight) * rand.NextDouble())); // время, на которое встал афк
+                _nextState = _state; // следующее состояние после выхода из афк - это текущее состояние пассажира
+                                    // то есть мы вернёмся в тот же обработчик, в котором вызвали этот афк
             }
         }
 
+        public void GotTicket()
+        {
+            State = PassengerState.GotTicket;
+            NextState = PassengerState.RequstedRegistration;
+        }
+
+        public void Registered()
+        {
+            State = PassengerState.Registered;
+            NextState = PassengerState.GotIntoBus;
+        }
+
+        public void GotRejected()
+        {
+            State = PassengerState.GotRejected;
+        }
 
         public override string ToString()
         {
