@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PassnegerGenerator
@@ -55,49 +56,59 @@ namespace PassnegerGenerator
      
         void UpdateSimulation() // считывание сообщений с очередей и их обработка
         {
-            var data = new Dictionary<string, string>();
 
             string mes = _rabbit.GetMessage(_rabbit.TicketsRQ);
             if (mes != String.Empty)
             {
-                data = _parser.ParseMessage(mes);
-                string guid = data[_parser.PassengerKey];
-                string response = data[_parser.ResponseKey];
-                if (response == _parser.SuccessValue) // если пришёл успех от кассы
+                using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
                 {
-                    Passengers[guid].GotTicket(); // то получили билет
-                }
-                else // если нет
-                {
-                    Passengers[guid].GotRejected(); // то уходим из аэропорта
+                    JsonElement data = jsonDoc.RootElement;
+                    string guid = data.GetProperty(_parser.PassengerKey).ToString();
+                    string response = data.GetProperty(_parser.ResponseKey).ToString();
+                    if (response == _parser.SuccessValue) // если пришёл успех от кассы
+                    {
+                        Passengers[guid].GotTicket(); // то получили билет
+                    }
+                    else // если нет
+                    {
+                        Passengers[guid].GotRejected(); // то уходим из аэропорта
+                    }
                 }
             }
 
             mes = _rabbit.GetMessage(_rabbit.RegistrationRQ); 
             if (mes != String.Empty)
             {
-                data = _parser.ParseMessage(mes);
-                string guid = data[_parser.PassengerKey];
-                string response = data[_parser.ResponseKey];
-                if (response == _parser.SuccessValue) // если пришёл успех от регистрации
+                using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
                 {
-                    Passengers[guid].Registered(); // то зарегистрировались
+                    JsonElement data = jsonDoc.RootElement;
+                    string guid = data.GetProperty(_parser.PassengerKey).ToString();
+                    string response = data.GetProperty(_parser.ResponseKey).ToString();
+                    if (response == _parser.SuccessValue) // если пришёл успех от регистрации
+                    {
+                        Passengers[guid].Registered(); // то зарегистрировались
+                    }
+                    else if (response == _parser.RegistrationNotStartedValue) // если регистрация не открыта
+                    {
+                        Passengers[guid].RollToGoAFK(_curTime); // идём афк
+                    }
+                    else // если просто не смогли зарегаться
+                    {
+                        Passengers[guid].GotRejected(); // то уходим из аэропорта
+                    }
                 }
-                else if (response == _parser.RegistrationNotStartedValue) // если регистрация не открыта
-                {
-                    Passengers[guid].RollToGoAFK(_curTime); // идём афк
-                }
-                else // если просто не смогли зарегаться
-                {
-                    Passengers[guid].GotRejected(); // то уходим из аэропорта
-                }
+                
             }
 
             mes = _rabbit.GetMessage(_rabbit.FlightsRQ);
             if (mes != String.Empty)
             {
                 // добавить полёт в симуляцию
-                data = _parser.ParseMessage(mes);
+                using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
+                {
+                    JsonElement data = jsonDoc.RootElement;
+                    throw new NotImplementedException();
+                }
             }
         }
 

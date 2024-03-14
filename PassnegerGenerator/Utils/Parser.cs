@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PassengerGenerator
@@ -14,53 +16,39 @@ namespace PassengerGenerator
         public string BaggageKey { get => "Baggage"; }
         public string FoodKey { get => "Food"; }
         public string ResponseKey { get => "Response"; }
-        public string SuccessValue { get => "1"; }
+        public string TimeKey { get => "Time"; }
         public string FailValue { get => "0"; }
+        public string SuccessValue { get => "1"; }
         public string RegistrationNotStartedValue { get => "2"; }
-        public Dictionary<string, string> ParseMessage(string message)
+
+        public JsonDocument ParseMessage(string json)
         {
-            Dictionary<string, string> parsedMessage = new Dictionary<string, string>();
-            string[] pairs = message.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 0; i < pairs.Length; i++)
-            {
-                string[] key_value = pairs[i].Split(':', StringSplitOptions.RemoveEmptyEntries);
-                string key = key_value[0].Trim();
-                string value = key_value[1].Trim();
-                parsedMessage[key] = value;
-            }
-            return parsedMessage;
+            return JsonDocument.Parse(json);
         }
 
         public string ParseDict(Dictionary<string, string> dict)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (KeyValuePair<string, string> pair in dict)
-            {
-                string key = pair.Key;
-                string value = pair.Value;
-                string strPair = $"{key}:{value};";
-                sb.Append(strPair);
-            }
-            return sb.ToString();
+            string json = JsonSerializer.Serialize(dict);
+            return json;
         }
 
         public string ParsePassengerForTickets(Passenger passenger)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append($"{PassengerKey}:{passenger.GUID};");
-            sb.Append($"{FlightKey}:{passenger.Flight.GUID};");
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data[PassengerKey] = passenger.GUID;
+            data[FlightKey] = passenger.Flight.GUID;
             string baggage = passenger.HasBaggage ? "1" : "0";
-            sb.Append($"{BaggageKey}:{baggage};");
-            sb.Append($"{FoodKey}:meat;");
-            return sb.ToString();
+            data[BaggageKey] = baggage;
+            data[FoodKey] = "meat";
+            return ParseDict(data);
         }
 
         public string ParsePassengerForRegAndBus(Passenger passenger)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append($"{PassengerKey}:{passenger.GUID};");
-            sb.Append($"{FlightKey}:{passenger.Flight.GUID};");
-            return sb.ToString();
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data[PassengerKey] = passenger.GUID;
+            data[FlightKey] = passenger.Flight.GUID;
+            return ParseDict(data);
         }
     }
 }
