@@ -43,7 +43,7 @@ namespace PassengerGenerator
             return ParseDict(data);
         }
 
-        public string ParsePassengerForRegAndBus(Passenger passenger)
+        public string ParsePassengerForRegistration(Passenger passenger)
         {
             Dictionary<string, string> data = new Dictionary<string, string>();
             data[PassengerKey] = passenger.GUID;

@@ -153,11 +153,7 @@ namespace PassnegerGenerator
                 case PassengerState.RequstedRegistration: // регистрация запрошена
                     break; // ничего не делаем до ответа
                 case PassengerState.Registered: // зарегистрирован
-                    passenger.RollToGoAFK(_curTime); // возможность встать афк
-                    if (passenger.State != PassengerState.AFK) // если не встал афк
-                    {
-                        ProccessRegistered(passenger); // обработка состояния, отправка пассажира в автобус
-                    }
+                    passenger.State = PassengerState.GotIntoBus;
                     break;
                 case PassengerState.GotIntoBus: // отправился в автобус
                     Passengers.Remove(passenger.GUID); // удаляем его
@@ -181,17 +177,9 @@ namespace PassnegerGenerator
 
         void ProccessGotTicket(Passenger passenger)
         {
-            string message = _parser.ParsePassengerForRegAndBus(passenger); // парсим пассажира в строку для регистрации
+            string message = _parser.ParsePassengerForRegistration(passenger); // парсим пассажира в строку для регистрации
             _rabbit.PutMessage(_rabbit.RegistrationWQ, message); // кладём сообщение в очередь регистрации
             passenger.State = PassengerState.Registered; // изменяем состояния
             passenger.NextState = PassengerState.GotIntoBus;
-        }
-
-        void ProccessRegistered(Passenger passenger)
-        {
-            string message = _parser.ParsePassengerForRegAndBus(passenger); // парсим пассажира в строку для автобуса
-            _rabbit.PutMessage(_rabbit.BusWQ, message); // кладём сообщение в очередь автобуса
-            passenger.State = PassengerState.GotIntoBus; // изменяем состояния
-        }
     }
 }
