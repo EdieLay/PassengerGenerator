@@ -175,6 +175,7 @@ namespace PassnegerGenerator
             {
                 case PassengerState.CameToAirport: // только сгенерированный пассажир
                     ProccessCameToAirport(passenger); // обработка состояния, запрос билета\
+                    //passenger.State = PassengerState.GotTicket;
                     break;
                 case PassengerState.RequestedTicket: // билет запрошен
                     break; // ничего не происходит, пока билет или отказ не получен
