@@ -17,6 +17,8 @@ namespace PassengerGenerator
         public string FoodKey { get => "Food"; }
         public string ResponseKey { get => "Response"; }
         public string TimeKey { get => "Time"; }
+        public string DateKey { get => "Date"; }
+        public string TotalSeatsKey { get => "TotalSeats"; }
         public string FailValue { get => "0"; }
         public string SuccessValue { get => "1"; }
         public string RegistrationNotStartedValue { get => "2"; }

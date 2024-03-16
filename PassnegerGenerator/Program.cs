@@ -4,8 +4,8 @@ using Serilog;
 
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .WriteTo.Console()
+    .MinimumLevel.Information()
+    //.WriteTo.Console()
     .WriteTo.File("logs/log.txt",
                 outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
                 rollingInterval: RollingInterval.Day)
@@ -14,9 +14,8 @@ Log.Logger = new LoggerConfiguration()
 
 
 Simulation simulation = new Simulation();
-Flight flight = new("123", DateTime.Now.AddHours(2), 200, DateTime.Now);
-simulation.Flights[flight.GUID] = flight;
 simulation.Execute();
+
 
 
 

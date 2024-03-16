@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PassnegerGenerator
 {
@@ -17,6 +19,7 @@ namespace PassnegerGenerator
         public DateTime Date { get => _date; }
         public int TotalSeats { get => _totalSeats; }
         public int PassengerGenerationRate { get => _genRate; } // 0-99 - 0 passengers; 100-199 - 1 passenger; 200-299 - 2... 
+        public int GeneratedOnFlight { get; set; }
 
 
         public Flight(string guid, DateTime date, int totalSeats, DateTime curTime)
@@ -24,12 +27,18 @@ namespace PassnegerGenerator
             _guid = guid;
             _date = date;
             _totalSeats = totalSeats;
-            int minutesToFlight = (int)date.Subtract(curTime).TotalMinutes;
-            _genRate = (int)(_totalSeats * 100 / minutesToFlight * 1.15) + 100;
+            int secondsToFlight = (int)date.Subtract(curTime).TotalSeconds;
+            _genRate = (int)((double)_totalSeats * 100.0 / (double)secondsToFlight * 1.5) + 100;
+            GeneratedOnFlight = 0;
+            Log.Information("Created flight: {@Flight}", this);
         }
 
-        public int GenerateNumOfPassengers()
+        public int GenerateNumOfPassengers(DateTime curTime)
         {
+            int secondsToFlight = (int)_date.Subtract(curTime).TotalSeconds;
+            //Log.Debug("Flight time: {FlightTime}. Current time: {CurrentTime}. Difference: {MinutesDif}", Date, curTime, minutesToFlight);
+            if (_date.Subtract(curTime).TotalSeconds > 240)
+                return -1;
             var rand = new Random();
             return rand.Next(PassengerGenerationRate + 1) / 100;
         }

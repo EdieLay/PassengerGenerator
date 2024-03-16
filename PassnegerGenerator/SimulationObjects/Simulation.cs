@@ -15,7 +15,7 @@ namespace PassnegerGenerator
     {
         Rabbit _rabbit; // класс для работы с RabbitMQ
         DateTime _curTime; // текущее время симуляции
-        int _interval = 2000; // за сколько миллисекунд реального времени проходит 1 минута симуляции
+        int _interval = 1000; // за сколько миллисекунд реального времени проходит 1 Секунда симуляции
         Parser _parser; // класс для парсинга сообщений из RabbitMQ
 
         public Dictionary<string, Passenger> Passengers { get; set; } // словарь всех пассжиров, ключ - GUID
@@ -49,71 +49,100 @@ namespace PassnegerGenerator
                     ProccessState(passenger, curState); // конечный автомат для каждого пассажира
                 }
 
-                _curTime = _curTime.AddMinutes(1); // увеличиваем время на 1 минуту
+                _curTime = _curTime.AddSeconds(1); // увеличиваем время на 1 секунду
                 delay.Wait(); // тут ждём, когда пройдут оставшиеся от _interval мс
             }
         }
      
         void UpdateSimulation() // считывание сообщений с очередей и их обработка
         {
-
+            Log.Debug("UpdateSimulation()");
             string mes = _rabbit.GetMessage(_rabbit.TicketsRQ);
             if (mes != String.Empty)
             {
-                using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
+                try
                 {
-                    JsonElement data = jsonDoc.RootElement;
-                    string guid = data.GetProperty(_parser.PassengerKey).ToString();
-                    string response = data.GetProperty(_parser.ResponseKey).ToString();
-                    if (response == _parser.SuccessValue) // если пришёл успех от кассы
+                    using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
                     {
-                        Passengers[guid].GotTicket(); // то получили билет
+                        JsonElement data = jsonDoc.RootElement;
+                        string guid = data.GetProperty(_parser.PassengerKey).ToString();
+                        string response = data.GetProperty(_parser.ResponseKey).ToString();
+                        if (response == _parser.SuccessValue) // если пришёл успех от кассы
+                        {
+                            Passengers[guid].GotTicket(); // то получили билет
+                        }
+                        else // если нет
+                        {
+                            Passengers[guid].GotRejected(); // то уходим из аэропорта
+                        }
                     }
-                    else // если нет
-                    {
-                        Passengers[guid].GotRejected(); // то уходим из аэропорта
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Couldn't parse JSON from {QueueName}", _rabbit.TicketsRQ);
                 }
             }
 
             mes = _rabbit.GetMessage(_rabbit.RegistrationRQ); 
             if (mes != String.Empty)
             {
-                using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
+                try
                 {
-                    JsonElement data = jsonDoc.RootElement;
-                    string guid = data.GetProperty(_parser.PassengerKey).ToString();
-                    string response = data.GetProperty(_parser.ResponseKey).ToString();
-                    if (response == _parser.SuccessValue) // если пришёл успех от регистрации
+                    using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
                     {
-                        Passengers[guid].Registered(); // то зарегистрировались
+                        JsonElement data = jsonDoc.RootElement;
+                        string guid = data.GetProperty(_parser.PassengerKey).ToString();
+                        string response = data.GetProperty(_parser.ResponseKey).ToString();
+                        if (response == _parser.SuccessValue) // если пришёл успех от регистрации
+                        {
+                            Passengers[guid].Registered(); // то зарегистрировались
+                        }
+                        else if (response == _parser.RegistrationNotStartedValue) // если регистрация не открыта
+                        {
+                            Passengers[guid].RollToGoAFK(_curTime); // идём афк
+                        }
+                        else // если просто не смогли зарегаться
+                        {
+                            Passengers[guid].GotRejected(); // то уходим из аэропорта
+                        }
                     }
-                    else if (response == _parser.RegistrationNotStartedValue) // если регистрация не открыта
-                    {
-                        Passengers[guid].RollToGoAFK(_curTime); // идём афк
-                    }
-                    else // если просто не смогли зарегаться
-                    {
-                        Passengers[guid].GotRejected(); // то уходим из аэропорта
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Couldn't parse JSON from {QueueName}", _rabbit.RegistrationRQ);
                 }
                 
             }
 
-            mes = _rabbit.GetMessage(_rabbit.FlightsRQ);
-            if (mes != String.Empty)
+            if (_curTime.Second % 10 == 0) // запрашиваем инфу о самолётах раз в 15 секунд, чтобы снизить нагрузку программы
             {
-                // добавить полёт в симуляцию
-                using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
+                mes = _rabbit.GetMessage(_rabbit.FlightsRQ);
+                if (mes != String.Empty)
                 {
-                    JsonElement data = jsonDoc.RootElement;
-                    throw new NotImplementedException();
+                    try
+                    {
+                        using (JsonDocument jsonDoc = _parser.ParseMessage(mes))
+                        {
+                            JsonElement data = jsonDoc.RootElement;
+                            string guid = data.GetProperty(_parser.FlightKey).ToString();
+                            string date = data.GetProperty(_parser.DateKey).ToString();
+                            string totalSeats = data.GetProperty(_parser.TotalSeatsKey).ToString();
+                            DateTime dateTime = DateTime.Parse(date);
+                            int seats = int.Parse(totalSeats);
+                            Flights[guid] = new Flight(guid, dateTime, seats, _curTime);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Couldn't parse JSON or DateTime from {QueueName}", _rabbit.FlightsRQ);
+                    }
                 }
             }
         }
 
         void GeneratePassengersOnFlights() // генерирует пассажиров и удаляет прошедшие рейсы
         {
+            Log.Debug("GeneratePassengersOnFlights()");
             int i = 0;
             while (i < Flights.Count)
             {
@@ -124,11 +153,17 @@ namespace PassnegerGenerator
                     Flights.Remove(flightItem.Key); // то удаляем рейс
                     continue;
                 }
-                int numOfPassengers = flight.GenerateNumOfPassengers(); // генерируем количество пассажиров на рейс
-                for (int j = 0; j < numOfPassengers; j++)
+                int numOfPassengers = flight.GenerateNumOfPassengers(_curTime); // генерируем количество пассажиров на рейс
+                if (numOfPassengers >= 0)
                 {
-                    Passenger newPassenger = new Passenger(flight);
-                    Passengers[newPassenger.GUID] = newPassenger; // добавляем нового пассажира
+                    for (int j = 0; j < numOfPassengers; j++)
+                    {
+                        Passenger newPassenger = new Passenger(flight);
+                        Log.Information("Generated {Name} on flight {Flight}", newPassenger.Name, flight.GUID);
+                        Passengers[newPassenger.GUID] = newPassenger; // добавляем нового пассажира
+                    }
+                    flight.GeneratedOnFlight += numOfPassengers;
+                    Log.Information("Generated totally {GenereatedOnFlight} passengers on flight {Flight}", flight.GeneratedOnFlight, flight.GUID);
                 }
                 i++;
             }
@@ -139,7 +174,7 @@ namespace PassnegerGenerator
             switch (curState)
             {
                 case PassengerState.CameToAirport: // только сгенерированный пассажир
-                    ProccessCameToAirport(passenger); // обработка состояния, запрос билета
+                    ProccessCameToAirport(passenger); // обработка состояния, запрос билета\
                     break;
                 case PassengerState.RequestedTicket: // билет запрошен
                     break; // ничего не происходит, пока билет или отказ не получен
@@ -181,5 +216,6 @@ namespace PassnegerGenerator
             _rabbit.PutMessage(_rabbit.RegistrationWQ, message); // кладём сообщение в очередь регистрации
             passenger.State = PassengerState.Registered; // изменяем состояния
             passenger.NextState = PassengerState.GotIntoBus;
+        }
     }
 }

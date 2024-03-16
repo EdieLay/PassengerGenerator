@@ -88,11 +88,11 @@ namespace PassnegerGenerator
             if (rand.NextDouble() < 0.1) // шанс встать афк
             {
                 TimeSpan timeToFlight = Flight.Date.Subtract(curTime);
-                int minutesToFlight = (int)timeToFlight.TotalMinutes;
-                if (minutesToFlight < 1)
+                int secondsToFlight = (int)timeToFlight.TotalSeconds;
+                if (secondsToFlight < 1)
                     AFKTimer = 1;
                 else
-                    AFKTimer = Math.Max(1, (int)(rand.Next(minutesToFlight) * rand.NextDouble())); // время, на которое встал афк
+                    AFKTimer = Math.Max(1, (int)(rand.Next(secondsToFlight) * rand.NextDouble())); // время, на которое встал афк
                 _nextState = _state; // следующее состояние после выхода из афк - это текущее состояние пассажира
                                     // то есть мы вернёмся в тот же обработчик, в котором вызвали этот афк
             }

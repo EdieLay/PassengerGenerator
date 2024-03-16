@@ -22,8 +22,8 @@ namespace PassengerGenerator
         // RQ - Read Queue - очередь для считывания
         public string TicketsWQ { get => "TicketsRequest"; }
         public string TicketsRQ { get => "TicketsResponse"; }
-        public string RegistrationWQ { get => "RegistrationRequest"; }
-        public string RegistrationRQ { get => "RegistrationResponse"; }
+        public string RegistrationWQ { get => "PassengersToRegistration"; }
+        public string RegistrationRQ { get => "RegistrationToPassengers"; }
         public string BusWQ { get => "PassengersToBus"; }
         public string FlightsRQ { get => "FlightsToPassengers"; }
 
