@@ -16,6 +16,7 @@ namespace PassengerGenerator
         public string BaggageKey { get => "Baggage"; }
         public string FoodKey { get => "Food"; }
         public string ResponseKey { get => "Response"; }
+        public string TicketKey { get => "Ticket"; }
         public string TimeKey { get => "Time"; }
         public string DateKey { get => "Date"; }
         public string TotalSeatsKey { get => "TotalSeats"; }

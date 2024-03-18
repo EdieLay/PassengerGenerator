@@ -66,7 +66,7 @@ namespace PassnegerGenerator
                     {
                         JsonElement data = jsonDoc.RootElement;
                         string guid = data.GetProperty(_parser.PassengerKey).ToString();
-                        string response = data.GetProperty(_parser.ResponseKey).ToString();
+                        string response = data.GetProperty(_parser.TicketKey).ToString();
                         if (response == _parser.SuccessValue) // если пришёл успех от кассы
                         {
                             Passengers[guid].GotTicket(); // то получили билет
@@ -154,7 +154,7 @@ namespace PassnegerGenerator
                     continue;
                 }
                 int numOfPassengers = flight.GenerateNumOfPassengers(_curTime); // генерируем количество пассажиров на рейс
-                if (numOfPassengers >= 0)
+                if (numOfPassengers > 0)
                 {
                     for (int j = 0; j < numOfPassengers; j++)
                     {
@@ -215,8 +215,8 @@ namespace PassnegerGenerator
         {
             string message = _parser.ParsePassengerForRegistration(passenger); // парсим пассажира в строку для регистрации
             _rabbit.PutMessage(_rabbit.RegistrationWQ, message); // кладём сообщение в очередь регистрации
-            passenger.State = PassengerState.Registered; // изменяем состояния
-            passenger.NextState = PassengerState.GotIntoBus;
+            passenger.State = PassengerState.RequstedRegistration; // изменяем состояния
+            passenger.NextState = PassengerState.Registered;
         }
     }
 }
