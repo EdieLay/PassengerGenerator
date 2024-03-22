@@ -6,7 +6,7 @@ using Serilog;
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     //.WriteTo.Console()
-    .WriteTo.File("logs/log.txt",
+    .WriteTo.File("logsPassGen/log.txt",
                 outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
                 rollingInterval: RollingInterval.Day)
     .CreateLogger();
